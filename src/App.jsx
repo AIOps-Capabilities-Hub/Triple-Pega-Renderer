@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
 import InspectionDemo from "./InspectionDemo";
 import PurchaseVehicleFlow from "./PurchaseVehicleFlow";
+import MockModeApp from "./MockModeApp.jsx";
+import "./MockMode.css";
 
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET;
@@ -443,7 +445,7 @@ const renderNestedForm = (
   );
 };
 
-function App() {
+function LiveApp() {
   const [activeDemo, setActiveDemo] = useState("PURCHASE");
   const [resetKey, setResetKey] = useState(0);
   const [step, setStep] = useState("INIT");
@@ -1370,6 +1372,62 @@ function App() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+const MOCK_MODE_STORAGE_KEY = "triple-pega-renderer:mock-mode";
+
+function readMockModePreference() {
+  try {
+    return window.localStorage.getItem(MOCK_MODE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function App() {
+  const [mockMode, setMockMode] = useState(readMockModePreference);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MOCK_MODE_STORAGE_KEY, String(mockMode));
+    } catch {
+      // The switch remains usable in the current tab if storage is disabled.
+    }
+  }, [mockMode]);
+
+  return (
+    <div className="mode-shell">
+      <header className="mode-switchbar">
+        <div className="mode-brand">
+          <span className="mode-brand-mark">TP</span>
+          <div>
+            <strong>Triple Pega Renderer</strong>
+            <span className="mode-brand-caption">Workflow playground</span>
+          </div>
+        </div>
+        <div className="mode-switch-controls">
+          <span className={!mockMode ? "mode-current" : ""}>Live</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={mockMode}
+            aria-label="Toggle offline mock mode"
+            className={"mode-switch" + (mockMode ? " is-on" : "")}
+            onClick={() => setMockMode((current) => !current)}
+          >
+            <span className="mode-switch-thumb" />
+          </button>
+          <span className={mockMode ? "mode-current" : ""}>Mock mode</span>
+          <span className={"mode-status" + (mockMode ? " mock" : " live")}>
+            {mockMode ? "LOCAL DATA · NO PEGA CALLS" : "PEGA CONNECTED MODE"}
+          </span>
+        </div>
+      </header>
+      <main className="mode-app">
+        {mockMode ? <MockModeApp /> : <LiveApp />}
+      </main>
     </div>
   );
 }
